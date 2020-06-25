@@ -2,6 +2,7 @@
 
 import argparse, json, os, sys, urllib.request
 from html.parser import HTMLParser
+import xml.etree.ElementTree as ET
 
 class UrlResponse():
     def __init__(self, url, contents):
@@ -34,7 +35,7 @@ class UrlDownloader():
             jsonList.append(jsonDict)
         cacheDir = os.path.dirname(self.cachePath)
         if not os.path.isdir(cacheDir):
-            os.mkdirs(cacheDir)
+            os.makedirs(cacheDir)
         open(self.cachePath, 'w').write(json.dumps(jsonList))
         
     def getUrl(self, url):
@@ -176,6 +177,22 @@ def getUniProtEntry(url, urlDownloader):
     urlContents = urlDownloader.getUrl(url + ".xml")
     return urlContents
 
+def parseUniProtEntry(text):
+    tree = ET.fromstring(text)
+    print("Tree = " + str(tree))
+    root = tree#.getroot()
+    print("Root = " + str(root))
+    namespace = "{http://uniprot.org/uniprot}"
+    entry = root.find(namespace + "entry")
+    print("entry = " + str(entry))
+    protein = entry.find(namespace + "protein")
+    print("protein = " + str(protein))
+    nameHolder = protein.find(namespace + "recommendedName")
+    print("name holder = " + str(nameHolder))
+    fullName = nameHolder.find(namespace + "fullName")
+    print("full name = " + str(fullName))
+    print(fullName.text)
+
 def main():
     parser = argparse.ArgumentParser(
         description = """
@@ -193,7 +210,7 @@ def main():
     print("uniprot query result: " + str(url))
     if url is not None:
         entry = getUniProtEntry(url, downloader)
-        print(str(entry))
+        parseUniProtEntry(entry)
 
 if __name__ == "__main__":
     main()
