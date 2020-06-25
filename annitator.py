@@ -172,6 +172,10 @@ def searchUniProt(query, urlDownloader):
         return rootUrl + interestingResults[0].url
     return None
 
+def getUniProtEntry(url, urlDownloader):
+    urlContents = urlDownloader.getUrl(url + ".xml")
+    return urlContents
+
 def main():
     parser = argparse.ArgumentParser(
         description = """
@@ -186,7 +190,10 @@ def main():
 
     downloader = UrlDownloader("urlcache")
     url = searchUniProt("rpoE", downloader)
-    print("uniprot result = " + str(url))
+    print("uniprot query result: " + str(url))
+    if url is not None:
+        entry = getUniProtEntry(url, downloader)
+        print(str(entry))
 
 if __name__ == "__main__":
     main()
