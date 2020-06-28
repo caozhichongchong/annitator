@@ -269,8 +269,7 @@ def parseUniProtEntry(text):
     disruptionNode = findXmlNode(tree, namespace, ["entry", "comment[@type='disruption phenotype']", "text"])
     if disruptionNode is not None:
         parsed.disruptionPhenotype = disruptionNode.text
-    print("parsed = " + str(parsed))
-
+    
     return parsed
 
 def main():
@@ -281,16 +280,36 @@ def main():
             Generates a new csv file containing annotation information in a new column
             """
     )
-    parser.add_argument("--input", nargs=1)
-    parser.add_argument("--output", nargs=1)
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
+    print("Loading " + str(args.input))
+    queries = []
+    with open(args.input) as inputFile:
+        lines = inputFile.readlines()
+        queries = [line.strip() for line in lines]
+    print("Read queries of " + str(queries))
+
+    print("Downloading data")
     downloader = UrlDownloader("urlcache")
-    url = searchUniProt("rpoE", downloader)
-    print("uniprot query result: " + str(url))
-    if url is not None:
-        entry = getUniProtEntryContents(url, downloader)
-        parseUniProtEntry(entry)
+    parsedEntries = []
+    for query in queries:
+        url = searchUniProt("rpoE", downloader)
+        print("uniprot query result: " + str(url))
+        if url is not None:
+            text = getUniProtEntryContents(url, downloader)
+            parsed = parseUniProtEntry(text)
+            parsedEntries.append(parsed)
+
+    print("Saving results to " + str(args.output))
+    outputLines = []
+    for parsed in parsedEntries:
+        line = str(parsed)
+        outputLines.append(line)
+    with open(args.output, 'w') as outputFile:
+        outputFile.write("\n\n".join(outputLines))
+    print("Done")
 
 if __name__ == "__main__":
     main()
