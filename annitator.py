@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import argparse, json, os, sys, urllib.request
+import argparse, collections, json, os, sys, urllib.request
 from html.parser import HTMLParser
 import xml.etree.ElementTree as ET
 
@@ -173,25 +173,105 @@ def searchUniProt(query, urlDownloader):
         return rootUrl + interestingResults[0].url
     return None
 
-def getUniProtEntry(url, urlDownloader):
+def getUniProtEntryContents(url, urlDownloader):
     urlContents = urlDownloader.getUrl(url + ".xml")
     return urlContents
 
+class UniProtEntry():
+    def __init__(self):
+        self.protein = None
+        self.gene = None
+        self.organism = None
+        self.status = None
+        self.function = None
+        self.functionPublications = None
+        self.pathway = None
+        self.biologicalProcesses = None
+        self.disruptionPhenotype = None
+
+    def __str__(self):
+        components = collections.OrderedDict()
+        components["protein"] = self.protein
+        components["gene"] = self.gene
+        components["organism"] = self.organism
+        components["status"] = self.status
+        components["function"] = self.function
+        components["functionPublications"] = self.functionPublications
+        components["pathway"] = self.pathway
+        components["biologicalProcesses"] = self.biologicalProcesses
+        components["distruptionPhenotype"] = self.disruptionPhenotype
+        lines = []
+        for key, value in components.items():
+            if value is None:
+                value = "unknown"
+            lines.append(key + ": " + str(value))
+        return ",\n".join(lines)
+    
+
+# converts from a list of components into the xpath format
+# the xpath format is required for querying an ElementTree
+def makeXpathQuery(namespace, path):
+    return "/".join(["."] + [namespace + pathComponent for pathComponent in path])
+
+def findXmlNodes(root, namespace, path):
+    query = makeXpathQuery(namespace, path)
+    result = root.findall(query)
+    return result
+
+def findXmlNode(root, namespace, path):
+    query = makeXpathQuery(namespace, path)
+    nodes = root.findall(query)
+    if len(nodes) == 1:
+        return nodes[0]
+    #print("Found nodes " + str(nodes) + " for query " + query)
+    return None
+    
 def parseUniProtEntry(text):
     tree = ET.fromstring(text)
-    print("Tree = " + str(tree))
-    root = tree#.getroot()
-    print("Root = " + str(root))
+    parsed = UniProtEntry()
     namespace = "{http://uniprot.org/uniprot}"
-    entry = root.find(namespace + "entry")
-    print("entry = " + str(entry))
-    protein = entry.find(namespace + "protein")
-    print("protein = " + str(protein))
-    nameHolder = protein.find(namespace + "recommendedName")
-    print("name holder = " + str(nameHolder))
-    fullName = nameHolder.find(namespace + "fullName")
-    print("full name = " + str(fullName))
-    print(fullName.text)
+
+    xmlNameNode = findXmlNode(tree, namespace, ["entry", "protein", "recommendedName", "fullName"])
+    if xmlNameNode is not None:
+        parsed.protein = xmlNameNode.text
+
+    geneNode = findXmlNode(tree, namespace, ["entry", "gene", "name[@type='primary']"])
+    if geneNode is not None:
+        parsed.gene = geneNode.text
+
+    organismNode = findXmlNode(tree, namespace, ["entry", "organism", "name[@type='scientific']"])
+    if organismNode is not None:
+        parsed.organism = organismNode.text
+
+    parsed.status = "ANNITATOR DOES NOT YET KNOW HOW TO PARSE 'status', SORRY"
+
+    functionNode = findXmlNode(tree, namespace, ["entry", "comment[@type='function']"])
+    if functionNode is not None:
+        parsed.function = functionNode.text
+
+    parsed.functionPublications = "ANNITATOR DOES NOT YET KNOW HOW TO PARSE function publications, SORRY"
+
+    pathwayNode = findXmlNode(tree, namespace, ["entry", "comment[@type='pathway']", "text"])
+    if pathwayNode is not None:
+        parsed.pathway = pathwayNode.text
+
+    processNodes = findXmlNodes(tree, namespace, ["entry", "dbReference[@type='GO']", "property[@type='term']"])
+    if len(processNodes) > 0:
+        processes = []
+        for node in processNodes:
+            if "value" in node.attrib:
+                value = node.attrib["value"]
+                prefix = "P:"
+                if value.startswith(prefix):
+                    processes.append(value[len(prefix):])
+        parsed.biologicalProcesses = processes
+
+    disruptionNode = findXmlNode(tree, namespace, ["entry", "comment[@type='disruption phenotype']", "text"])
+    if disruptionNode is not None:
+        parsed.disruptionPhenotype = disruptionNode.text
+    print("parsed = " + str(parsed))
+
+    return parsed
 
 def main():
     parser = argparse.ArgumentParser(
@@ -209,7 +289,7 @@ def main():
     url = searchUniProt("rpoE", downloader)
     print("uniprot query result: " + str(url))
     if url is not None:
-        entry = getUniProtEntry(url, downloader)
+        entry = getUniProtEntryContents(url, downloader)
         parseUniProtEntry(entry)
 
 if __name__ == "__main__":
