@@ -179,6 +179,7 @@ def getUniProtEntryContents(url, urlDownloader):
 
 class UniProtEntry():
     def __init__(self):
+        self.entry = None
         self.protein = None
         self.gene = None
         self.organism = None
@@ -191,6 +192,7 @@ class UniProtEntry():
 
     def __str__(self):
         components = collections.OrderedDict()
+        components["entry"] = self.entry
         components["protein"] = self.protein
         components["gene"] = self.gene
         components["organism"] = self.organism
@@ -226,9 +228,10 @@ def findXmlNode(root, namespace, path):
     #print("Found nodes " + str(nodes) + " for query " + query)
     return None
     
-def parseUniProtEntry(text):
+def parseUniProtEntry(text, entry):
     tree = ET.fromstring(text)
     parsed = UniProtEntry()
+    parsed.entry = entry
     namespace = "{http://uniprot.org/uniprot}"
 
     xmlNameNode = findXmlNode(tree, namespace, ["entry", "protein", "recommendedName", "fullName"])
@@ -245,11 +248,26 @@ def parseUniProtEntry(text):
 
     parsed.status = "ANNITATOR DOES NOT YET KNOW HOW TO PARSE 'status', SORRY"
 
-    functionNode = findXmlNode(tree, namespace, ["entry", "comment[@type='function']"])
+    functionNode = findXmlNodes(tree, namespace, ["entry", "comment[@type='function']", "text"])
+    functionSet = []
     if functionNode is not None:
-        parsed.function = functionNode.text
+        for node in functionNode:
+            functionSet.append(node.text)
 
-    parsed.functionPublications = "ANNITATOR DOES NOT YET KNOW HOW TO PARSE function publications, SORRY"
+    functionNode = findXmlNodes(tree, namespace, ["entry", "comment[@type='activity regulation']", "text"])
+    if functionNode is not None:
+        for node in functionNode:
+            functionSet.append(node.text)
+
+    parsed.function = '; '.join(functionSet)
+
+    functionPublicationsNode = findXmlNodes(tree, namespace, ["entry", "reference[@key]", "citation", "title"])
+    if functionPublicationsNode is not None:
+        functionPublications = []
+        for node in functionPublicationsNode:
+            functionPublications.append(node.text)
+        parsed.functionPublications = '; '.join(functionPublications)
+    #parsed.functionPublications = "ANNITATOR DOES NOT YET KNOW HOW TO PARSE function publications, SORRY"
 
     pathwayNode = findXmlNode(tree, namespace, ["entry", "comment[@type='pathway']", "text"])
     if pathwayNode is not None:
@@ -271,6 +289,21 @@ def parseUniProtEntry(text):
         parsed.disruptionPhenotype = disruptionNode.text
     
     return parsed
+
+def parsedEntriesToCsv(parsed):
+    tempList = [
+        str(parsed.entry),
+        str(parsed.protein),
+        str(parsed.gene),
+        str(parsed.organism),
+        str(parsed.function),
+        str(parsed.pathway),
+        '; '.join(parsed.biologicalProcesses),
+        str(parsed.disruptionPhenotype),
+        str(parsed.functionPublications)]
+    tempLine = '\t'.join([tempFactor.replace('\t',' ') for tempFactor in tempList])
+    return tempLine + '\n'
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -295,20 +328,26 @@ def main():
     downloader = UrlDownloader("urlcache")
     parsedEntries = []
     for query in queries:
-        url = searchUniProt("rpoE", downloader)
-        print("uniprot query result: " + str(url))
-        if url is not None:
-            text = getUniProtEntryContents(url, downloader)
-            parsed = parseUniProtEntry(text)
-            parsedEntries.append(parsed)
+        for sub_query in query.split(';'):
+            url = searchUniProt(sub_query, downloader)
+            print("uniprot query result: " + str(url))
+            if url is not None:
+                text = getUniProtEntryContents(url, downloader)
+                parsed = parseUniProtEntry(text, query)
+                parsedEntries.append(parsed)
 
     print("Saving results to " + str(args.output))
     outputLines = []
+    outputLinesCsv = []
+    headLines = 'entry\tprotein\tgene\torganism\tfunction\tpathway\tGO_biology\tdisruptionPhenotype\tPublication\n'
     for parsed in parsedEntries:
         line = str(parsed)
         outputLines.append(line)
+        outputLinesCsv.append(parsedEntriesToCsv(parsed))
     with open(args.output, 'w') as outputFile:
         outputFile.write("\n\n".join(outputLines))
+    with open(args.output + '.csv', 'w') as outputFile:
+        outputFile.write(headLines + "".join(outputLinesCsv))
     print("Done")
 
 if __name__ == "__main__":
