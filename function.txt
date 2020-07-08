@@ -6,7 +6,6 @@ hsdM
 chiS;rcsC;evgS;bvgS
 gtf1;tagE;amsD
 wza;vpsN
-Phage minor structural protein;
 pnbA;aes
 srtB;dsbA
 gyrB;parE
@@ -22,7 +21,6 @@ helY
 tuf;selB
 comEC;snoaC;dnrC;dauC;aknG
 smf
-Transposase;IS605OrfBfamily
 tolA
 parB;spo0J;noc
 dapH;dapD
@@ -35,7 +33,6 @@ tagF
 yhgE
 lspA;yccA
 epsG
-
 xynB;abnA
 tagH
 cynR
@@ -59,7 +56,6 @@ treS;malL;treC
 bxlA;bglX;nagZ
 amyA;malS
 csa3
-RNAligase
 hicB
 nfsA;nfrA1
 trxB;ahpF
@@ -74,7 +70,6 @@ gph;ppaX
 ligA;ligB
 mfd;recG
 asa1
-transposase
 iolS
 acm;cwlS
 dagK;yegS
@@ -121,13 +116,9 @@ murN;femB;femA
 rutR;nemR
 phoB1;phoP;mtrA
 hypBA2
-Glycosylhydrolasefamily43protein
 glk;nagC
-Phage portal protein, SPP1 Gp6-like;
 mef;entS
-Helix-turn-helixDNAbindingprotein
 aroA
-Hemerythrin HHE cation binding domain protein;two-component system, sensor kinase [EC:2.7.13.3];Histidine kinase;None
 bxlE;msmE
 lplA
 dxs;tktA;tktB
@@ -137,7 +128,6 @@ hepA
 hsdS
 sufD
 gtrB;csbB;rgpI
-Branched-chain amino acid permease (Azaleucine resistance);
 mhpC
 mscS
 arsB
@@ -167,7 +157,7 @@ coaBC;dfp;coaC
 hscA;dnaK
 rgy;topA
 ycaJ;dnaX
-rnhA;rnhA-dnaQ
+rnhA;dnaQ
 lhr
 spoU;rlmB
 infB;lepA
@@ -180,7 +170,6 @@ valS;ileS
 pheT;pheS
 relA;spoT
 proS;glyS
-tRNA 5'-leader removal
 rnd;ctpD
 truB
 hisH
@@ -194,17 +183,10 @@ dcd
 cpdA
 allB;pyrC
 egtB
-membrane protein (DUF2207);Predicted membrane protein (DUF2207);
-(ABC) transporter;ATP-binding cassette, subfamily B, bacterial;ATP-binding cassette, subfamily C, bacterial;ABC transporter
-Putative ABC-transporter type IV;
 nfrA2
-Relaxase/Mobilizationnucleasedomainprotein
-Alpha helical Porin B
 fha1
 hemX;pilO
 slyX
-ABC-2 type transport system permease protein;
-transcriptional regulator;domain protein;DNA-binding transcription factor activity
 leuS;metG;metS
 htpX
 srtA
@@ -216,11 +198,11 @@ serB;thrH;serB;PSPH
 serA;ghrB;ghrA
 oppC;
 oppB
-lpp;flaD-A;flaD
+lpp;flaD;flaD
 sapZ
 pepO
 narK;nrtP;nasA;oxlT
-leuB;icd-2;icd;icd1
+leuB;icd
 fadD
 laaA
 ptpA
@@ -229,7 +211,7 @@ oppA;mppA
 hutM;mmuP;ybgF
 csd;sufS;csdA
 msbA
-PDF;def
+def
 pilX;gspK
 gluB
 lolC_E

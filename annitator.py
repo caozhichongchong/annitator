@@ -47,10 +47,21 @@ class UrlDownloader():
 
     def _downloadUrl(self, url):
         # download url
-        time.sleep(2)
-        print("Downloading url '" + url + "', not using cache")
-        response = urllib.request.urlopen(url)
-        data = response.read()
+        data = None
+        for i in range(5):
+            time.sleep(1)
+            try:
+                print("Downloading url '" + url + "', not using cache")
+                response = urllib.request.urlopen(url, timeout=30)
+                data = response.read()
+                break
+            except Exception as e:
+                print("Download failed", e)
+                time.sleep(1)
+                continue
+        if data is None:
+            print("Failed to download " + url)
+            return None
         text = data.decode('utf-8')
         # save into cache
         self.responses.append(UrlResponse(url, text))
@@ -160,6 +171,8 @@ def searchUniProt(query, urlDownloader):
     rootUrl = "https://uniprot.org"
     query = urllib.parse.quote(query)
     searchResults = urlDownloader.getUrl(rootUrl + "/uniprot/?query=" + query + "&sort=score")
+    if searchResults is None:
+        return None
     parser = UniProtSearchResultsParser()
     parser.feed(searchResults)
     results = parser.results
@@ -189,7 +202,7 @@ class UniProtEntry():
         self.function = None
         self.functionPublications = None
         self.pathway = None
-        self.biologicalProcesses = None
+        self.biologicalProcesses = []
         self.disruptionPhenotype = None
 
     def __str__(self):
@@ -353,8 +366,6 @@ def main():
         outputLines.append(line)
         outputLinesCsv.append(parsedEntriesToCsv(parsed))
     with open(args.o, 'w') as outputFile:
-        outputFile.write("\n\n".join(outputLines))
-    with open(args.o + '.csv', 'w') as outputFile:
         outputFile.write(headLines + "".join(outputLinesCsv))
     print("Done")
 

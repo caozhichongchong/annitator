@@ -2,3 +2,4 @@
 urlcache
 .DS_Store
 *~
+*.csv
