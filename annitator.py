@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import argparse, collections, json, os, sys, urllib.request
+import argparse, collections, json, os, sys, urllib.request,urllib.parse, time
 from html.parser import HTMLParser
 import xml.etree.ElementTree as ET
 
@@ -27,7 +27,7 @@ class UrlDownloader():
 
     def saveCache(self):
         jsonList = []
-        maxCacheSize = 1000
+        maxCacheSize = 5000
         if len(self.responses) > maxCacheSize:
             self.responses = self.responses[-maxCacheSize:]
         for response in self.responses:
@@ -47,6 +47,7 @@ class UrlDownloader():
 
     def _downloadUrl(self, url):
         # download url
+        time.sleep(2)
         print("Downloading url '" + url + "', not using cache")
         response = urllib.request.urlopen(url)
         data = response.read()
@@ -157,6 +158,7 @@ class UniProtSearchResultsParser(HTMLParser):
 
 def searchUniProt(query, urlDownloader):
     rootUrl = "https://uniprot.org"
+    query = urllib.parse.quote(query)
     searchResults = urlDownloader.getUrl(rootUrl + "/uniprot/?query=" + query + "&sort=score")
     parser = UniProtSearchResultsParser()
     parser.feed(searchResults)
@@ -313,13 +315,19 @@ def main():
             Generates a new csv file containing annotation information in a new column
             """
     )
-    parser.add_argument("--input", required=True)
-    parser.add_argument("--output", required=True)
+    parser.add_argument('-i',
+                        default="example.txt",
+                        action='store', type=str,
+                        metavar='input_function_list.txt',
+                        help="input list of your functions separated by new line\n")
+    parser.add_argument('-o',
+                        default="annotation.csv", action='store', type=str, metavar='annotation.csv',
+                        help="output csv filename to store the annotations")
     args = parser.parse_args()
 
-    print("Loading " + str(args.input))
+    print("Loading " + str(args.i))
     queries = []
-    with open(args.input) as inputFile:
+    with open(args.i) as inputFile:
         lines = inputFile.readlines()
         queries = [line.strip() for line in lines]
     print("Read queries of " + str(queries))
@@ -336,7 +344,7 @@ def main():
                 parsed = parseUniProtEntry(text, query)
                 parsedEntries.append(parsed)
 
-    print("Saving results to " + str(args.output))
+    print("Saving results to " + str(args.o))
     outputLines = []
     outputLinesCsv = []
     headLines = 'entry\tprotein\tgene\torganism\tfunction\tpathway\tGO_biology\tdisruptionPhenotype\tPublication\n'
@@ -344,9 +352,9 @@ def main():
         line = str(parsed)
         outputLines.append(line)
         outputLinesCsv.append(parsedEntriesToCsv(parsed))
-    with open(args.output, 'w') as outputFile:
+    with open(args.o, 'w') as outputFile:
         outputFile.write("\n\n".join(outputLines))
-    with open(args.output + '.csv', 'w') as outputFile:
+    with open(args.o + '.csv', 'w') as outputFile:
         outputFile.write(headLines + "".join(outputLinesCsv))
     print("Done")
 
